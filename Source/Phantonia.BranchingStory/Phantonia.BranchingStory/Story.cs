@@ -13,9 +13,9 @@ namespace Phantonia.BranchingStory
 
         public bool CanProgressWithOption(int optionId)
         {
-            return CurrentNode is not SwitchNode switchNode
-                || !switchNode.Options.TryGetValue(optionId, out SwitchOptionNode? option)
-                || option.NextNode is null;
+            return CurrentNode is SwitchNode switchNode
+                && switchNode.Options.TryGetValue(optionId, out SwitchOptionNode? option)
+                && option.NextNode is not null;
         }
 
         public bool CanProgressWithoutOption()
