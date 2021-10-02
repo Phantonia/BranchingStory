@@ -1,5 +1,6 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
+using System.Collections.Immutable;
 
 namespace Phantonia.BranchingStory.Tests.StoriesAndNodes
 {
@@ -66,6 +67,50 @@ namespace Phantonia.BranchingStory.Tests.StoriesAndNodes
             Assert.IsFalse(story1.CanProgressWithoutOption());
 
             Assert.ThrowsException<InvalidOperationException>(story1.Progress);
+        }
+
+        [TestMethod]
+        public void TestStoryWithSwitch()
+        {
+            const string Option0 = "Get banana";
+            const string Option1 = "Do not get banana";
+            const string Text0 = "Potassium";
+            const string Text1 = "Kris You Are Going To Get Sick";
+
+            SwitchOptionNode so0 = new(id: 0, Option0);
+
+            TextNode so0_tn = new(Text0);
+
+            so0 = so0 with { NextNode = so0_tn };
+
+            SwitchOptionNode so1 = new(id: 1, Option1);
+
+            TextNode so1_tn = new(Text1);
+
+            so1 = so1 with { NextNode = so1_tn };
+
+            ImmutableDictionary<int, SwitchOptionNode> options = new[] { so0, so1 }.ToImmutableDictionary(o => o.Id);
+
+            SwitchNode sn = new(options);
+
+            Story story0 = new(sn);
+
+            Assert.IsTrue(story0.CanProgressWithOption(0));
+            Assert.IsTrue(story0.CanProgressWithOption(1));
+            Assert.IsFalse(story0.CanProgressWithOption(2));
+            Assert.IsFalse(story0.CanProgressWithOption(1337));
+
+            Story story1_0 = story0.ProgressWithOption(0);
+            Story story1_1 = story0.ProgressWithOption(1);
+
+            Assert.IsTrue(story1_0.CurrentNode is TextNode { Text: Text0 });
+            Assert.IsTrue(story1_1.CurrentNode is TextNode { Text: Text1 });
+
+            Assert.IsFalse(story1_0.CanProgressWithoutOption());
+            Assert.IsFalse(story1_1.CanProgressWithoutOption());
+
+            Assert.ThrowsException<InvalidOperationException>(story1_0.Progress);
+            Assert.ThrowsException<InvalidOperationException>(story1_1.Progress);
         }
     }
 }

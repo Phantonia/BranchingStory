@@ -17,7 +17,7 @@ namespace Phantonia.BranchingStory.Tests.StoriesAndNodes
                 ["char"] = "Queen"
             }.ToImmutableDictionary());
 
-            IHasAttributes attr1 = new SwitchOptionNode(id: 0, new Dictionary<string, string>
+            IHasAttributes attr1 = new SwitchOptionNode(id: 0, text: "Bla", new Dictionary<string, string>
             {
                 ["type"] = "explicit"
             }.ToImmutableDictionary());
