@@ -41,7 +41,31 @@ namespace Phantonia.BranchingStory.Tests.StoryAndNodes
             Assert.IsFalse(story1.CanProgressWithoutOption());
             Assert.IsFalse(story1.CanProgressWithOption(1729));
 
-            Assert.ThrowsException<InvalidOperationException>(() => story1.Progress());
+            Assert.ThrowsException<InvalidOperationException>(story1.Progress);
+        }
+
+        [TestMethod]
+        public void TestStoryWithActionNodes()
+        {
+            const string Action0 = "LikeJKRowlingTweet";
+            const string Action1 = "YeetThem";
+
+            ActionNode an0 = new(Action0);
+            ActionNode an1 = new(Action1);
+
+            an0 = an0 with { NextNode = an1 };
+
+            Story story0 = new(an0);
+
+            Assert.AreSame(an0, story0.CurrentNode);
+            Assert.IsTrue(story0.CanProgressWithoutOption());
+
+            Story story1 = story0.Progress();
+
+            Assert.AreSame(an1, story1.CurrentNode);
+            Assert.IsFalse(story1.CanProgressWithoutOption());
+
+            Assert.ThrowsException<InvalidOperationException>(story1.Progress);
         }
     }
 }
