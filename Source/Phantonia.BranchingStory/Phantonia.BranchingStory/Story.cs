@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Immutable;
 
 namespace Phantonia.BranchingStory
 {
@@ -7,7 +8,17 @@ namespace Phantonia.BranchingStory
         public Story(StoryNode rootNode)
         {
             CurrentNode = rootNode;
+            localBranchesTaken = ImmutableDictionary<string, int>.Empty;
         }
+
+        private Story(StoryNode currentNode, ImmutableDictionary<string, int> localBranchesTaken)
+        {
+            CurrentNode = currentNode;
+            this.localBranchesTaken = localBranchesTaken;
+        }
+
+        // internal for unit testing
+        internal readonly ImmutableDictionary<string, int> localBranchesTaken;
 
         public StoryNode CurrentNode { get; }
 
@@ -20,19 +31,61 @@ namespace Phantonia.BranchingStory
 
         public bool CanProgressWithoutOption()
         {
-            return CurrentNode is INonBranchingNode { NextNode: not null };
+            if (CurrentNode is INonBranchingNode { NextNode: not null })
+            {
+                return true;
+            }
+
+            if (CurrentNode is not PreNode preNode)
+            {
+                return false;
+            }
+
+            if (!localBranchesTaken.TryGetValue(preNode.TargetedSwitch, out int optionId))
+            {
+                return false;
+            }
+
+            if (preNode.Branches.ContainsKey(optionId))
+            {
+                return true;
+            }
+
+            return preNode.ElseNode is not null;
         }
 
         public Story Progress()
         {
-            if (CurrentNode is INonBranchingNode { NextNode: var nextNode })
             {
-                if (nextNode is null)
+                if (CurrentNode is INonBranchingNode { NextNode: var nextNode })
                 {
-                    throw new InvalidOperationException("Reached the end.");
+                    if (nextNode is null)
+                    {
+                        throw new InvalidOperationException("Reached the end.");
+                    }
+
+                    return new Story(nextNode, localBranchesTaken);
+                }
+            }
+
+            if (CurrentNode is PreNode preNode)
+            {
+                if (!localBranchesTaken.TryGetValue(preNode.TargetedSwitch, out int optionId))
+                {
+                    throw new InvalidOperationException("Somehow a pre node targeted a switch that is not saved.");
                 }
 
-                return new Story(nextNode);
+                if (!preNode.Branches.TryGetValue(optionId, out StoryNode? nextNode))
+                {
+                    nextNode = preNode.ElseNode;
+
+                    if (nextNode is null)
+                    {
+                        throw new InvalidOperationException("Reached the end.");
+                    }
+                }
+
+                return new Story(nextNode, localBranchesTaken);
             }
 
             throw new InvalidOperationException("Cannot progress without choosing an option in this case.");
@@ -52,7 +105,13 @@ namespace Phantonia.BranchingStory
                     throw new InvalidOperationException("Reached the end.");
                 }
 
-                return new Story(option.NextNode);
+                if (switchNode.Name is not null)
+                {
+                    ImmutableDictionary<string, int> newBranchesTaken = localBranchesTaken.SetItem(switchNode.Name, optionId);
+                    return new Story(option.NextNode, newBranchesTaken);
+                }
+
+                return new Story(option.NextNode, localBranchesTaken);
             }
 
             throw new InvalidOperationException("Cannot progress with an option in this case.");

@@ -10,7 +10,5 @@ namespace Phantonia.BranchingStory
         }
 
         public ImmutableDictionary<string, string> Attributes { get; init; }
-
-        public StoryNode? ParentNode { get; init; }
     }
 }
