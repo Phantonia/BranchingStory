@@ -15,6 +15,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Phantonia.BranchingStory.Markup\Phantonia.BranchingStory.Markup.csproj" />
     <ProjectReference Include="..\Phantonia.BranchingStory\Phantonia.BranchingStory.csproj" />
   </ItemGroup>
 

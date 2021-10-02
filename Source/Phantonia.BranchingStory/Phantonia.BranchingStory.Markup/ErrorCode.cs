@@ -3,6 +3,7 @@
     public enum ErrorCode
     {
         None = 0,
+        XmlSyntaxError,
         RootElementNotStory,
         TextElementWithChildren
     }
