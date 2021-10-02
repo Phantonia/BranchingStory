@@ -12,12 +12,12 @@ namespace Phantonia.BranchingStory.Tests.StoriesAndNodes
         [TestMethod]
         public void TestAttributes()
         {
-            IHasAttributes attr0 = new TextNode(text: "Pottery not respected", new Dictionary<string, string>
+            IHasAttributes attr0 = new TextNode(text: "Pottery not respected", attributes: new Dictionary<string, string>
             {
                 ["char"] = "Queen"
             }.ToImmutableDictionary());
 
-            IHasAttributes attr1 = new SwitchOptionNode(id: 0, text: "Bla", new Dictionary<string, string>
+            IHasAttributes attr1 = new SwitchOptionNode(id: 0, text: "Bla", attributes: new Dictionary<string, string>
             {
                 ["type"] = "explicit"
             }.ToImmutableDictionary());
