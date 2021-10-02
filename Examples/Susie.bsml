@@ -1,0 +1,31 @@
+<story>
+    <text char="Susie">
+        God fucking damnit Kris, where the hell are we?
+    </text>
+
+    <switch type="Decision">
+        <option id="0">
+            <content>
+                In Deltarune
+            </content>
+            
+            <text char="Susie">
+                What the hell is that place? Never been there.
+            </text>
+        </option>
+
+        <option id="1">
+            <content>
+                In Undertale
+            </content>
+
+            <text char="Susie">
+                Oh, I've heard of that. That's the game with the funny bone man, right?
+            </text>
+
+            <text char="Narrator">
+                You die a little inside.
+            </text>
+        </option>
+    </switch>
+</story>
