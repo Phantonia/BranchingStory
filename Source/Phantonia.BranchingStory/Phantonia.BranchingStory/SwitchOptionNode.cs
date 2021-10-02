@@ -4,10 +4,11 @@ namespace Phantonia.BranchingStory
 {
     public sealed record SwitchOptionNode : IHasAttributes, INonBranchingNode
     {
-        public SwitchOptionNode(int id, string text, ImmutableDictionary<string, string>? attributes = null)
+        public SwitchOptionNode(int id, string text, StoryNode? nextNode = null, ImmutableDictionary<string, string>? attributes = null)
         {
             Id = id;
             Text = text;
+            NextNode = nextNode;
             Attributes = attributes ?? ImmutableDictionary<string, string>.Empty;
         }
 
