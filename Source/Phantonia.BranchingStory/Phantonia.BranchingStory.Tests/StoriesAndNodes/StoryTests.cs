@@ -1,7 +1,7 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 
-namespace Phantonia.BranchingStory.Tests.StoryAndNodes
+namespace Phantonia.BranchingStory.Tests.StoriesAndNodes
 {
     [TestClass]
     public sealed class StoryTests
