@@ -1,7 +1,9 @@
 ﻿using System.Collections.Immutable;
+using System.Diagnostics;
 
 namespace Phantonia.BranchingStory
 {
+    [DebuggerDisplay("{" + nameof(GetDebuggerDisplay) + "(),nq}")]
     public sealed record ActionNode : StoryNode, INonBranchingNode
     {
         public ActionNode(string actionName, StoryNode? nextNode = null, ImmutableDictionary<string, string>? attributes = null) : base(attributes)
@@ -13,5 +15,7 @@ namespace Phantonia.BranchingStory
         public string ActionName { get; init; }
 
         public StoryNode? NextNode { get; init; }
+
+        private string GetDebuggerDisplay() => $"Action: {ActionName}";
     }
 }
