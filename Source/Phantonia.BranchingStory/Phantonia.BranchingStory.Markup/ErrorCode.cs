@@ -5,6 +5,9 @@
         None = 0,
         XmlSyntaxError,
         RootElementNotStory,
-        TextElementWithChildren
+        TextElementWithChildren,
+        OptWithoutId,
+        SwitchChildNotOpt,
+        BooleanAttributeNotTrueOrFalse,
     }
 }

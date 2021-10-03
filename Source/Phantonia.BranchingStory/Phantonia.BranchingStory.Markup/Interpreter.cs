@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Xml;
+using AttributeList = System.Collections.Immutable.ImmutableDictionary<string, string>;
 
 namespace Phantonia.BranchingStory.Markup
 {
@@ -48,7 +49,7 @@ namespace Phantonia.BranchingStory.Markup
                 // we can recover from this by just treating the non-story root element as the story element
             }
 
-            BodyInterpretationResult? result = InterpretBody(storyElement);
+            BodyInterpretationResult? result = InterpretBody(storyElement, nextNode: null);
 
             errors.AddRange(result.Errors);
 
@@ -57,23 +58,25 @@ namespace Phantonia.BranchingStory.Markup
             return new InterpretationResult { Story = story, Errors = errors.ToImmutableArray() };
         }
 
-        private BodyInterpretationResult InterpretBody(XmlElement bodyRootElement)
+        private BodyInterpretationResult InterpretBody(XmlElement bodyRootElement, StoryNode? nextNode, int childStartIndex = 0)
         {
-            StoryNode? nextNode = null;
+            StoryNode? followingNode = nextNode;
 
-            foreach (XmlElement element in bodyRootElement.ChildNodes.Cast<XmlElement>().Reverse())
+            foreach (XmlElement element in bodyRootElement.ChildNodes.Cast<XmlElement>()
+                                                                     .Reverse()
+                                                                     .Skip(childStartIndex))
             {
-                StoryNode? currentNode = MakeNode(element, nextNode);
-                nextNode = currentNode;
+                StoryNode? currentNode = MakeNode(element, followingNode);
+                followingNode = currentNode;
             }
 
-            Debug.Assert(nextNode is not null);
+            Debug.Assert(followingNode is not null);
 
             // nextNode is the first node now
-            return new(EntryPoint: nextNode, ExitPoints: ImmutableList<StoryNode>.Empty);
+            return new(EntryPoint: followingNode, ExitPoints: ImmutableList<StoryNode>.Empty);
         }
 
-        private static ImmutableDictionary<string, string> GetAttributes(XmlElement element)
+        private static AttributeList GetAttributes(XmlElement element)
         {
             return element.Attributes.Cast<XmlAttribute>().ToImmutableDictionary(a => a.Name, a => a.Value);
         }
@@ -84,6 +87,7 @@ namespace Phantonia.BranchingStory.Markup
             {
                 Tags.TextTag => MakeTextNode(element, nextNode),
                 Tags.ActionTag => MakeActionNode(element, nextNode),
+                Tags.SwitchTag => MakeSwitchNode(element, nextNode),
 
                 _ => throw new NotImplementedException(),
             };
@@ -93,7 +97,7 @@ namespace Phantonia.BranchingStory.Markup
         {
             Debug.Assert(element.Name == Tags.ActionTag);
 
-            var attributes = GetAttributes(element);
+            AttributeList attributes = GetAttributes(element);
 
             if (element.ChildNodes.Count == 1 && element.ChildNodes[0] is XmlText xmlText)
             {
@@ -116,7 +120,7 @@ namespace Phantonia.BranchingStory.Markup
         {
             Debug.Assert(element.Name == Tags.TextTag);
 
-            var attributes = GetAttributes(element);
+            AttributeList attributes = GetAttributes(element);
 
             if (element.ChildNodes.Count == 1 && element.ChildNodes[0] is XmlText xmlText)
             {
@@ -133,6 +137,119 @@ namespace Phantonia.BranchingStory.Markup
             // we can recover by just ignoring this but it might result in nonsense
             
             return new TextNode(element.InnerText, nextNode, attributes);
+        }
+
+        private SwitchNode MakeSwitchNode(XmlElement element, StoryNode? nextNode)
+        {
+            Debug.Assert(element.Name == Tags.SwitchTag);
+
+            AttributeList attributes = GetAttributes(element);
+
+            bool isGlobal;
+
+            if (attributes.TryGetValue(Tags.GlobalAttribute, out string? globalValue))
+            {
+                switch (globalValue)
+                {
+                    case Tags.True:
+                        isGlobal = true;
+                        break;
+                    case Tags.False:
+                        isGlobal = false;
+                        break;
+                    default:
+                        errors.Add(new Error(ErrorCode.BooleanAttributeNotTrueOrFalse));
+                        isGlobal = false;
+                        break;
+                }
+
+                attributes = attributes.Remove(Tags.GlobalAttribute);
+            }
+            else
+            {
+                isGlobal = false;
+            }
+
+            if (attributes.TryGetValue(Tags.NameAttribute, out string? name))
+            {
+                attributes = attributes.Remove(Tags.NameAttribute);
+            }
+            else
+            {
+                name = null;
+            }
+
+            List<SwitchOptionNode> options = new();
+
+            foreach (XmlElement child in element.ChildNodes)
+            {
+                if (child.Name != Tags.OptTag)
+                {
+                    errors.Add(new Error(ErrorCode.SwitchChildNotOpt));
+
+                    // we recover by ignoring this child
+                    continue;
+                }
+
+                SwitchOptionNode option = MakeSwitchOptionNode(child, nextNode);
+                options.Add(option);
+            }
+
+            ImmutableDictionary<int, SwitchOptionNode> optionsDict = options.ToImmutableDictionary(o => o.Id);
+
+            return new SwitchNode(optionsDict, name, isGlobal, attributes);
+        }
+
+        private SwitchOptionNode MakeSwitchOptionNode(XmlElement optElement, StoryNode? nextNode)
+        {
+            Debug.Assert(optElement.Name == Tags.OptTag);
+
+            AttributeList optAttributes = GetAttributes(optElement);
+
+            if (!optAttributes.TryGetValue(Tags.IdAttribute, out string? value) || !int.TryParse(value, out int id))
+            {
+                errors.Add(new Error(ErrorCode.OptWithoutId));
+
+                // we can recover by ignoring the issue
+
+                id = -1;
+            }
+            else
+            {
+                optAttributes = optAttributes.Remove(Tags.IdAttribute);
+            }
+
+            int startIndex = 0;
+            string nodeText = "";
+
+            if (optElement.ChildNodes.Count >= 1 && optElement.ChildNodes[0]?.Name == Tags.OptTextTag)
+            {
+                startIndex = 1;
+
+                XmlElement? optTextElement = optElement.ChildNodes[0] as XmlElement;
+
+                Debug.Assert(optTextElement is not null);
+
+                //AttributeList optTextAttributes = GetAttributes(optTextElement);
+
+                if (optTextElement.ChildNodes.Count == 1 && optTextElement.ChildNodes[0] is XmlText xmlText)
+                {
+                    nodeText = xmlText.Value ?? "";
+                }
+                else if (!optTextElement.HasChildNodes)
+                {
+                    nodeText = "";
+                }
+                else
+                {
+                    errors.Add(new Error(ErrorCode.TextElementWithChildren));
+                    nodeText = optTextElement.InnerText;
+                }
+            }
+
+            BodyInterpretationResult result = InterpretBody(optElement, nextNode, startIndex);
+
+            return new SwitchOptionNode(id, nodeText, result.EntryPoint, optAttributes);
         }
     }
 }
