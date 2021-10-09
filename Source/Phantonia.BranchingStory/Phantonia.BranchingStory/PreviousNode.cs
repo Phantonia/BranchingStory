@@ -2,9 +2,9 @@
 
 namespace Phantonia.BranchingStory
 {
-    public sealed record PreNode : StoryNode
+    public sealed record PreviousNode : StoryNode
     {
-        public PreNode(string targetedSwitch, ImmutableDictionary<int, StoryNode> branches, StoryNode? elseNode = null, ImmutableDictionary<string, string>? attributes = null) : base(attributes)
+        public PreviousNode(string targetedSwitch, ImmutableDictionary<int, StoryNode> branches, StoryNode? elseNode = null, ImmutableDictionary<string, string>? attributes = null) : base(attributes)
         {
             TargetedSwitch = targetedSwitch;
             Branches = branches;
