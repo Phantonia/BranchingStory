@@ -166,7 +166,7 @@ namespace Phantonia.BranchingStory.Tests.StoriesAndNodes
             {
                 [0] = an_liz_kissMary
             }.ToImmutableDictionary();
-            PreNode pn_loveLiz = new(SwitchName, branches, elseNode: tn_narr_thatsIt);
+            PreviousNode pn_loveLiz = new(SwitchName, branches, elseNode: tn_narr_thatsIt);
 
             const string Sneeze = "Sneeze";
             ActionNode an_liz_sneeze = new(Sneeze, nextNode: pn_loveLiz);
@@ -212,7 +212,7 @@ namespace Phantonia.BranchingStory.Tests.StoriesAndNodes
                 Assert.IsTrue(story3.CanProgressWithoutOption());
 
                 Story story4 = story3.Progress();
-                Assert.IsTrue(story4.CurrentNode is PreNode);
+                Assert.IsTrue(story4.CurrentNode is PreviousNode);
 
                 Assert.IsTrue(story4.CanProgressWithoutOption());
 
@@ -236,7 +236,7 @@ namespace Phantonia.BranchingStory.Tests.StoriesAndNodes
                 Assert.IsTrue(story3.CanProgressWithoutOption());
 
                 Story story4 = story3.Progress();
-                Assert.IsTrue(story4.CurrentNode is PreNode);
+                Assert.IsTrue(story4.CurrentNode is PreviousNode);
 
                 Assert.IsTrue(story4.CanProgressWithoutOption());
 

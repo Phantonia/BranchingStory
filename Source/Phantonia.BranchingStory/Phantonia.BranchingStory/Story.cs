@@ -36,22 +36,22 @@ namespace Phantonia.BranchingStory
                 return true;
             }
 
-            if (CurrentNode is not PreNode preNode)
+            if (CurrentNode is not PreviousNode previousNode)
             {
                 return false;
             }
 
-            if (!localBranchesTaken.TryGetValue(preNode.TargetedSwitch, out int optionId))
+            if (!localBranchesTaken.TryGetValue(previousNode.TargetedSwitch, out int optionId))
             {
                 return false;
             }
 
-            if (preNode.Branches.ContainsKey(optionId))
+            if (previousNode.Branches.ContainsKey(optionId))
             {
                 return true;
             }
 
-            return preNode.ElseNode is not null;
+            return previousNode.ElseNode is not null;
         }
 
         public Story Progress()
@@ -68,16 +68,16 @@ namespace Phantonia.BranchingStory
                 }
             }
 
-            if (CurrentNode is PreNode preNode)
+            if (CurrentNode is PreviousNode previousNode)
             {
-                if (!localBranchesTaken.TryGetValue(preNode.TargetedSwitch, out int optionId))
+                if (!localBranchesTaken.TryGetValue(previousNode.TargetedSwitch, out int optionId))
                 {
                     throw new InvalidOperationException("Somehow a pre node targeted a switch that is not saved.");
                 }
 
-                if (!preNode.Branches.TryGetValue(optionId, out StoryNode? nextNode))
+                if (!previousNode.Branches.TryGetValue(optionId, out StoryNode? nextNode))
                 {
-                    nextNode = preNode.ElseNode;
+                    nextNode = previousNode.ElseNode;
 
                     if (nextNode is null)
                     {
