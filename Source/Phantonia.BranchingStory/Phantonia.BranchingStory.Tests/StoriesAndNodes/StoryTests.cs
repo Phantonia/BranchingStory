@@ -162,9 +162,9 @@ namespace Phantonia.BranchingStory.Tests.StoriesAndNodes
             const string KissMary = "KissMary";
             ActionNode an_liz_kissMary = new(KissMary, nextNode: tn_narr_thatsIt);
 
-            ImmutableDictionary<int, StoryNode> branches = new Dictionary<int, StoryNode>
+            ImmutableDictionary<int, PreviousOptionNode> branches = new Dictionary<int, PreviousOptionNode>
             {
-                [0] = an_liz_kissMary
+                [0] = new(id: 0, an_liz_kissMary)
             }.ToImmutableDictionary();
             PreviousNode pn_loveLiz = new(SwitchName, branches, elseNode: tn_narr_thatsIt);
 

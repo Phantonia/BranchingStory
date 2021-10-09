@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Immutable;
+using System.Diagnostics;
 
 namespace Phantonia.BranchingStory
 {
@@ -72,17 +73,23 @@ namespace Phantonia.BranchingStory
             {
                 if (!localBranchesTaken.TryGetValue(previousNode.TargetedSwitch, out int optionId))
                 {
-                    throw new InvalidOperationException("Somehow a pre node targeted a switch that is not saved.");
+                    throw new InvalidOperationException("Somehow a previous node targeted a switch that is not saved.");
                 }
 
-                if (!previousNode.Branches.TryGetValue(optionId, out StoryNode? nextNode))
+                StoryNode? nextNode;
+
+                if (previousNode.Branches.TryGetValue(optionId, out PreviousOptionNode? optionNode))
+                {
+                    nextNode = optionNode.NextNode;
+                }
+                else
                 {
                     nextNode = previousNode.ElseNode;
+                }
 
-                    if (nextNode is null)
-                    {
-                        throw new InvalidOperationException("Reached the end.");
-                    }
+                if (nextNode is null)
+                {
+                    throw new InvalidOperationException("Reached the end.");
                 }
 
                 return new Story(nextNode, localBranchesTaken);
@@ -97,7 +104,7 @@ namespace Phantonia.BranchingStory
             {
                 if (!switchNode.Options.TryGetValue(optionId, out SwitchOptionNode? option))
                 {
-                    throw new InvalidOperationException($"The id {optionId} does not exist in the current switch node.");
+                    Debug.Fail($"The id {optionId} does not exist in the current switch node.");
                 }
 
                 if (option.NextNode is null)

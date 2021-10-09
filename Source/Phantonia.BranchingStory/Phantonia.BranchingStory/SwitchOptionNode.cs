@@ -4,21 +4,12 @@ using System.Diagnostics;
 namespace Phantonia.BranchingStory
 {
     [DebuggerDisplay("{" + nameof(GetDebuggerDisplay) + "(),nq}")]
-    public sealed record SwitchOptionNode : IHasAttributes, INonBranchingNode
+    public sealed record SwitchOptionNode : OptionNode, IHasAttributes, INonBranchingNode
     {
-        public SwitchOptionNode(int id, string text, StoryNode? nextNode = null, ImmutableDictionary<string, string>? attributes = null)
+        public SwitchOptionNode(int id, string text, StoryNode? nextNode = null, ImmutableDictionary<string, string>? attributes = null) : base(id, nextNode, attributes)
         {
-            Id = id;
             Text = text;
-            NextNode = nextNode;
-            Attributes = attributes ?? ImmutableDictionary<string, string>.Empty;
         }
-
-        public ImmutableDictionary<string, string> Attributes { get; init; }
-
-        public int Id { get; init; }
-
-        public StoryNode? NextNode { get; init; }
 
         public string Text { get; init; }
 

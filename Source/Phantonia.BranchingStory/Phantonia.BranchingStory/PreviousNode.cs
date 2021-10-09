@@ -6,14 +6,14 @@ namespace Phantonia.BranchingStory
     [DebuggerDisplay("{" + nameof(GetDebuggerDisplay) + "(),nq}")]
     public sealed record PreviousNode : StoryNode
     {
-        public PreviousNode(string targetedSwitch, ImmutableDictionary<int, StoryNode> branches, StoryNode? elseNode = null, ImmutableDictionary<string, string>? attributes = null) : base(attributes)
+        public PreviousNode(string targetedSwitch, ImmutableDictionary<int, PreviousOptionNode> branches, StoryNode? elseNode = null, ImmutableDictionary<string, string>? attributes = null) : base(attributes)
         {
             TargetedSwitch = targetedSwitch;
             Branches = branches;
             ElseNode = elseNode;
         }
 
-        public ImmutableDictionary<int, StoryNode> Branches { get; init; }
+        public ImmutableDictionary<int, PreviousOptionNode> Branches { get; init; }
 
         public StoryNode? ElseNode { get; init; }
 
