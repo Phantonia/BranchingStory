@@ -9,5 +9,9 @@
         OptWithoutId,
         SwitchChildNotOpt,
         BooleanAttributeNotTrueOrFalse,
+        PreviousWithoutSwitchAttribute,
+        PreviousTargetsNonAccessibleOrNonExistingSwitch,
+        PreviousOptionDoesNotExistOnTargetedSwitch,
+        PreviousChildNotOpt,
     }
 }

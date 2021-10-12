@@ -88,6 +88,7 @@ namespace Phantonia.BranchingStory.Markup
                 Tags.TextTag => MakeTextNode(element, nextNode),
                 Tags.ActionTag => MakeActionNode(element, nextNode),
                 Tags.SwitchTag => MakeSwitchNode(element, nextNode),
+                Tags.PreviousTag => MakePreviousNode(element, nextNode),
 
                 _ => throw new NotImplementedException(),
             };
@@ -114,6 +115,121 @@ namespace Phantonia.BranchingStory.Markup
             // we can recover by just ignoring this but it might result in nonsense
 
             return new ActionNode(element.InnerText, nextNode, attributes);
+        }
+
+        private PreviousNode MakePreviousNode(XmlElement element, StoryNode? nextNode)
+        {
+            Debug.Assert(element.Name == Tags.PreviousTag);
+
+            AttributeList attributes = GetAttributes(element);
+
+            if (!attributes.TryGetValue(Tags.SwitchAttribute, out string? switchName))
+            {
+                errors.Add(new(ErrorCode.PreviousWithoutSwitchAttribute));
+
+                // we can recover by ignoring the issue
+                switchName = "";
+            }
+            else
+            {
+                attributes = attributes.Remove(Tags.SwitchAttribute);
+            }
+
+            // now on to find the switch we are targeting
+            IEnumerable<SwitchDefinition> Switches()
+            {
+                XmlElement currentElement = element;
+
+                while (currentElement.PreviousSibling is XmlElement previousElement)
+                {
+                    currentElement = previousElement;
+
+                    if (currentElement.Name != Tags.SwitchTag)
+                    {
+                        continue;
+                    }
+
+                    if (!currentElement.HasAttribute(Tags.NameAttribute))
+                    {
+                        continue;
+                    }
+
+                    string name = currentElement.GetAttribute(Tags.NameAttribute);
+
+                    var options = currentElement.ChildNodes
+                                                .Cast<XmlElement>()
+                                                .Where(e => e.Name == Tags.OptTag && e.HasAttribute(Tags.IdAttribute))
+                                                .Select(e => (isInt: int.TryParse(e.GetAttribute(Tags.IdAttribute), out int id), id))
+                                                .Where(t => t.isInt)
+                                                .Select(t => t.id)
+                                                .ToImmutableArray();
+
+                    yield return new SwitchDefinition(name, options);
+                }
+            }
+
+            var localSwitches = Switches().ToDictionary(s => s.Name);
+
+            if (!localSwitches.TryGetValue(switchName, out SwitchDefinition? definition))
+            {
+                // must be a global switch name
+                // do not support these yet
+
+                errors.Add(new Error(ErrorCode.PreviousTargetsNonAccessibleOrNonExistingSwitch));
+
+                // we can recover by ignoring the issue
+                definition = new SwitchDefinition(Name: "", OptionIds: ImmutableArray<int>.Empty);
+            }
+
+            List<PreviousOptionNode> options = new();
+
+            foreach (XmlElement child in element.ChildNodes)
+            {
+                if (child.Name != Tags.OptTag)
+                {
+                    errors.Add(new Error(ErrorCode.PreviousChildNotOpt));
+
+                    // we can recover by ignoring this child
+                    continue;
+                }
+
+                PreviousOptionNode option = MakePreviousOptionNode(child, definition.OptionIds, nextNode);
+                options.Add(option);
+            }
+
+            ImmutableDictionary<int, PreviousOptionNode> optionsDict = options.ToImmutableDictionary(o => o.Id);
+
+            return new PreviousNode(switchName, optionsDict, elseNode: nextNode, attributes);
+        }
+
+        private PreviousOptionNode MakePreviousOptionNode(XmlElement optElement, ImmutableArray<int> allowedOptions, StoryNode? nextNode)
+        {
+            Debug.Assert(optElement.Name == Tags.OptTag);
+
+            AttributeList optAttributes = GetAttributes(optElement);
+
+            if (!optAttributes.TryGetValue(Tags.IdAttribute, out string? value) || !int.TryParse(value, out int id))
+            {
+                errors.Add(new Error(ErrorCode.OptWithoutId));
+
+                // we can recover by ignoring the issue
+                id = -1;
+            }
+            else
+            {
+                if (!allowedOptions.Contains(id))
+                {
+                    errors.Add(new Error(ErrorCode.PreviousOptionDoesNotExistOnTargetedSwitch));
+
+                    // we can recover by ignoring the issue
+                }
+
+                optAttributes = optAttributes.Remove(Tags.IdAttribute);
+            }
+
+            BodyInterpretationResult result = InterpretBody(optElement, nextNode);
+
+            return new PreviousOptionNode(id, result.EntryPoint, optAttributes);
         }
 
         private TextNode MakeTextNode(XmlElement element, StoryNode? nextNode)
@@ -250,6 +366,11 @@ namespace Phantonia.BranchingStory.Markup
             BodyInterpretationResult result = InterpretBody(optElement, nextNode, startIndex);
 
             return new SwitchOptionNode(id, nodeText, result.EntryPoint, optAttributes);
+        }
+
+        private sealed record SwitchDefinition(string Name, ImmutableArray<int> OptionIds)
+        {
+            public SwitchDefinition(string Name, params int[] OptionIds) : this(Name, OptionIds.ToImmutableArray()) { }
         }
     }
 }
